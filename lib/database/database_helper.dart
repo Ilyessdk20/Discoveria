@@ -1,5 +1,8 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'dart:io' show Platform;
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -7,28 +10,40 @@ class DatabaseHelper {
 
   DatabaseHelper._init();
 
-  // Getter pour obtenir la base de données
   Future<Database> get database async {
     if (_database != null) return _database!;
+    
+    // Initialiser databaseFactory si besoin (Linux/Windows/macOS)
+    if (!kIsWeb && (Platform.isLinux || Platform.isWindows || Platform.isMacOS)) {
+      databaseFactory = databaseFactoryFfi;
+    }
+    
     _database = await _initDB('explorez_ville.db');
     return _database!;
   }
 
-  // Initialisation de la base de données
   Future<Database> _initDB(String filePath) async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
+    try {
+      final dbPath = await getDatabasesPath();
+      final path = join(dbPath, filePath);
 
-    return await openDatabase(
-      path,
-      version: 1,
-      onCreate: _createDB,
-    );
+      debugPrint('📂 Chemin de la base de données : $path');
+
+      return await openDatabase(
+        path,
+        version: 1,
+        onCreate: _createDB,
+      );
+    } catch (e) {
+      debugPrint('❌ Erreur lors de l\'initialisation de la DB : $e');
+      rethrow;
+    }
   }
 
-  // Création des tables
   Future _createDB(Database db, int version) async {
-    // Table Ville
+    debugPrint('🔧 Création des tables de la base de données...');
+    
+    // Table ville
     await db.execute('''
       CREATE TABLE ville(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,7 +60,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Table Lieu
+    // Table lieu
     await db.execute('''
       CREATE TABLE lieu(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,7 +78,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Table Commentaire
+    // Table commentaire
     await db.execute('''
       CREATE TABLE commentaire(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,11 +89,12 @@ class DatabaseHelper {
         FOREIGN KEY (lieu_id) REFERENCES lieu(id) ON DELETE CASCADE
       )
     ''');
+
+    debugPrint('✅ Tables créées avec succès');
   }
 
-  // Fermer la base de données
-  Future close() async {
+  Future<void> close() async {
     final db = await instance.database;
-    db.close();
+    await db.close();
   }
 }

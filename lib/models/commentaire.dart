@@ -2,7 +2,7 @@ class Commentaire {
   final int? id;
   final int lieuId;
   final String texte;
-  final int note; // Entre 1 et 5
+  final int note;
   final DateTime dateCreation;
 
   Commentaire({
@@ -11,7 +11,7 @@ class Commentaire {
     required this.texte,
     required this.note,
     DateTime? dateCreation,
-  }) : this.dateCreation = dateCreation ?? DateTime.now();
+  }) : dateCreation = dateCreation ?? DateTime.now();
 
   // Convertir en Map
   Map<String, dynamic> toMap() {
@@ -32,6 +32,23 @@ class Commentaire {
       texte: map['texte'],
       note: map['note'],
       dateCreation: DateTime.parse(map['date_creation']),
+    );
+  }
+
+  // ⬇️ AJOUTE CETTE MÉTHODE
+  Commentaire copyWith({
+    int? id,
+    int? lieuId,
+    String? texte,
+    int? note,
+    DateTime? dateCreation,
+  }) {
+    return Commentaire(
+      id: id ?? this.id,
+      lieuId: lieuId ?? this.lieuId,
+      texte: texte ?? this.texte,
+      note: note ?? this.note,
+      dateCreation: dateCreation ?? this.dateCreation,
     );
   }
 
